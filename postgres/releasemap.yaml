@@ -1,0 +1,39 @@
+### Set parameters based on PostgreSQL version supplied with particular distro
+
+{% import_yaml "postgres/repo.yaml" as repo %}
+
+  {# Generate lookup dictionary map for OS and derivative distributions
+    name: distro release
+    version: PostgreSQL release version
+    release: optional grain value if `name` does not match the one returned by `osrelease` grain
+  #}
+
+{% macro debian_release(name, version, release=none) %}
+
+  {% if repo.use_upstream_repo == true %}
+    {% set version = repo.version %}
+    {% set fromrepo = repo.fromrepo|default(name ~ '-pgdg', true) %}
+  {% else %}
+    {% set fromrepo = name %}
+  {% endif %}
+  {% set cluster_name = repo.cluster_name %}
+  {% set conf_dir = '/etc/postgresql/{0}/{1}'.format(version, cluster_name) %}
+  {% set data_dir = '/var/lib/postgresql/{0}/{1}'.format(version, cluster_name) %}
+
+{{ release|default(name, true) }}:
+  # PostgreSQL packages are mostly downloaded from `main` repo component
+  conf_dir: {{ conf_dir }}
+  data_dir: {{ data_dir }}
+  fromrepo: {{ fromrepo }}
+  pkg_repo:
+    name: 'deb http://apt.postgresql.org/pub/repos/apt {{ name }}-pgdg main'
+  pkg: postgresql-{{ version }}
+  pkg_client: postgresql-client-{{ version }}
+  prepare_cluster:
+    pgcommand: pg_createcluster {{ version }} {{ cluster_name }} -d
+    user: root
+
+{% endmacro %}
+
+
+{{ debian_release('ascii', '11') }}

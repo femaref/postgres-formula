@@ -36,4 +36,4 @@
 {% endmacro %}
 
 
-{{ debian_release('ascii', '11') }}
+{{ debian_release('stretch', '11', 'ascii') }}
